@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { adminApi, type User } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
@@ -22,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = async () => {
     try {
       const userData = await adminApi.getCurrentUser();
-      setUser(userData);
+      setUser(userData.data);
     } catch (error) {
       setUser(null);
     }
@@ -35,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const result = await adminApi.login({ email, password });
-    setUser(result.user);
+    setUser(result.data.user);
     // Small delay to ensure cookie is set
     await new Promise((resolve) => setTimeout(resolve, 100));
   };
@@ -65,4 +71,3 @@ export function useAuth() {
   }
   return context;
 }
-
