@@ -1,15 +1,10 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000";
 
-type ApiResponse<T> = {
-  success: boolean;
-  data: T;
-};
-
 async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
-): Promise<ApiResponse<T>> {
+): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, {
     ...options,
@@ -49,15 +44,13 @@ export const adminApi = {
   getTranslators: () => apiRequest<Translator[]>("/admin/translators"),
 
   createTranslator: (data: { username: string; email: string }) =>
-    apiRequest<{
-      id: string;
-      username: string;
-      email: string;
-      password: string;
-    }>("/admin/create-translator", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    apiRequest<{ id: string; username: string; email: string }>(
+      "/admin/create-translator",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    ),
 
   toggleTranslatorStatus: (id: string) =>
     apiRequest<{ message: string }>(`/admin/translators/${id}/toggle-status`, {
@@ -71,6 +64,11 @@ export const adminApi = {
 
   // Series
   getSeries: () => apiRequest<NovelSeries[]>("/admin/series"),
+
+  deleteSeries: (id: string) =>
+    apiRequest<{ message: string }>(`/admin/series/${id}`, {
+      method: "DELETE",
+    }),
 
   assignSeries: (data: {
     translatorId: string;

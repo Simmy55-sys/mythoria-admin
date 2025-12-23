@@ -44,9 +44,6 @@ export default function AdminDashboard() {
     adminRating: 3,
   });
   const [assignmentId, setAssignmentId] = useState<string | null>(null);
-  const [translatorPassword, setTranslatorPassword] = useState<string | null>(
-    null
-  );
   const [categories, setCategories] = useState<string[]>([]);
 
   const [translators, setTranslators] = useState<Translator[]>([]);
@@ -67,15 +64,15 @@ export default function AdminDashboard() {
         activeTab === "create-novel"
       ) {
         const translatorsData = await adminApi.getTranslators();
-        setTranslators(translatorsData.data);
+        setTranslators((translatorsData as any).data);
       }
       if (activeTab === "series" || activeTab === "assign") {
         const seriesData = await adminApi.getSeries();
-        setSeries(seriesData.data);
+        setSeries((seriesData as any).data);
       }
       if (activeTab === "create-novel") {
         const categoriesData = await adminApi.getCategories();
-        setCategories(categoriesData.data);
+        setCategories((categoriesData as any).data);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load data");
@@ -105,12 +102,9 @@ export default function AdminDashboard() {
     }
     try {
       setError(null);
-      const result = await adminApi.createTranslator(newTranslator);
-      // Extract password from response (response is wrapped in { success, data })
-      const password = result.data.password;
-      setTranslatorPassword(password);
+      await adminApi.createTranslator(newTranslator);
       setNewTranslator({ username: "", email: "" });
-      // setShowAddTranslator(false);
+      setShowAddTranslator(false);
       await loadData();
     } catch (err) {
       setError(
@@ -134,6 +128,23 @@ export default function AdminDashboard() {
     }
   };
 
+  const deleteSeries = async (id: string, title: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${title}"? This action cannot be undone and will delete all associated chapters, comments, and ratings.`
+      )
+    ) {
+      return;
+    }
+    try {
+      setError(null);
+      await adminApi.deleteSeries(id);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete series");
+    }
+  };
+
   const createNovel = async () => {
     if (!newNovel.seriesName || !newNovel.translatorId) {
       setError("Please fill in all required fields");
@@ -146,9 +157,7 @@ export default function AdminDashboard() {
         seriesName: newNovel.seriesName,
         adminRating: newNovel.adminRating,
       });
-      // Extract assignmentId from response (response is wrapped in { success, data })
-      const assignmentIdValue = result.data.assignmentId;
-      setAssignmentId(assignmentIdValue);
+      setAssignmentId(result.assignmentId);
       setNewNovel({ seriesName: "", translatorId: "", adminRating: 3 });
       await loadData();
     } catch (err) {
@@ -314,92 +323,48 @@ export default function AdminDashboard() {
                 <h3 className="text-lg font-semibold mb-4">
                   Register New Translator
                 </h3>
-
-                {translatorPassword && (
-                  <Card className="p-4 mb-6 border-green-500/30 bg-green-500/10">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle2 className="w-5 h-5 text-green-400" />
-                      <h4 className="font-semibold text-green-400">
-                        Translator Created Successfully!
-                      </h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Generated Password (share this with the translator):
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <code className="px-3 py-2 bg-background border border-border rounded text-sm font-mono">
-                        {translatorPassword}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          navigator.clipboard.writeText(translatorPassword);
-                        }}
-                      >
-                        Copy
-                      </Button>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-4"
-                      onClick={() => {
-                        setTranslatorPassword(null);
-                        setShowAddTranslator(false);
-                      }}
-                    >
-                      Create Another
-                    </Button>
-                  </Card>
-                )}
-
-                {!translatorPassword && (
-                  <>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <label className="text-sm text-muted-foreground mb-1 block">
-                          Username
-                        </label>
-                        <Input
-                          placeholder="Enter username"
-                          value={newTranslator.username}
-                          onChange={(e) =>
-                            setNewTranslator({
-                              ...newTranslator,
-                              username: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm text-muted-foreground mb-1 block">
-                          Email
-                        </label>
-                        <Input
-                          type="email"
-                          placeholder="Enter email"
-                          value={newTranslator.email}
-                          onChange={(e) =>
-                            setNewTranslator({
-                              ...newTranslator,
-                              email: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-                    <div className="flex gap-2 mt-4">
-                      <Button onClick={addTranslator}>Add Translator</Button>
-                      <Button
-                        variant="ghost"
-                        onClick={() => setShowAddTranslator(false)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </>
-                )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="text-sm text-muted-foreground mb-1 block">
+                      Username
+                    </label>
+                    <Input
+                      placeholder="Enter username"
+                      value={newTranslator.username}
+                      onChange={(e) =>
+                        setNewTranslator({
+                          ...newTranslator,
+                          username: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground mb-1 block">
+                      Email
+                    </label>
+                    <Input
+                      type="email"
+                      placeholder="Enter email"
+                      value={newTranslator.email}
+                      onChange={(e) =>
+                        setNewTranslator({
+                          ...newTranslator,
+                          email: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button onClick={addTranslator}>Add Translator</Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowAddTranslator(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </Card>
             )}
 
@@ -548,9 +513,19 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-                      {novel.title}
-                    </h3>
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-lg line-clamp-2 flex-1">
+                        {novel.title}
+                      </h3>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-2"
+                        onClick={() => deleteSeries(novel.id, novel.title)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                     <div className="flex flex-wrap gap-1 mb-3">
                       {novel.categories.map((cat) => (
                         <Badge
@@ -640,6 +615,14 @@ export default function AdminDashboard() {
                               No translator assigned
                             </Badge>
                           )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => deleteSeries(novel.id, novel.title)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
                     </Card>
