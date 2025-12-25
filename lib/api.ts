@@ -44,7 +44,7 @@ export const adminApi = {
   getTranslators: () => apiRequest<Translator[]>("/admin/translators"),
 
   createTranslator: (data: { username: string; email: string }) =>
-    apiRequest<{ id: string; username: string; email: string }>(
+    apiRequest<{ id: string; username: string; email: string; password: string }>(
       "/admin/create-translator",
       {
         method: "POST",

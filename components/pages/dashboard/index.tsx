@@ -44,6 +44,9 @@ export default function AdminDashboard() {
     adminRating: 3,
   });
   const [assignmentId, setAssignmentId] = useState<string | null>(null);
+  const [translatorPassword, setTranslatorPassword] = useState<string | null>(
+    null
+  );
   const [categories, setCategories] = useState<string[]>([]);
 
   const [translators, setTranslators] = useState<Translator[]>([]);
@@ -102,9 +105,14 @@ export default function AdminDashboard() {
     }
     try {
       setError(null);
-      await adminApi.createTranslator(newTranslator);
+      const result = await adminApi.createTranslator(newTranslator);
+      // Extract password from response (response is wrapped in { success, data })
+      const response = result as any;
+      const password = response.data?.password || response.password;
+      if (password) {
+        setTranslatorPassword(password);
+      }
       setNewTranslator({ username: "", email: "" });
-      setShowAddTranslator(false);
       await loadData();
     } catch (err) {
       setError(
@@ -157,7 +165,13 @@ export default function AdminDashboard() {
         seriesName: newNovel.seriesName,
         adminRating: newNovel.adminRating,
       });
-      setAssignmentId(result.assignmentId);
+      // Extract assignmentId from response (response is wrapped in { success, data })
+      const response = result as any;
+      const assignmentIdValue =
+        response.data?.assignmentId || response.assignmentId;
+      if (assignmentIdValue) {
+        setAssignmentId(assignmentIdValue);
+      }
       setNewNovel({ seriesName: "", translatorId: "", adminRating: 3 });
       await loadData();
     } catch (err) {
@@ -323,48 +337,95 @@ export default function AdminDashboard() {
                 <h3 className="text-lg font-semibold mb-4">
                   Register New Translator
                 </h3>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1 block">
-                      Username
-                    </label>
-                    <Input
-                      placeholder="Enter username"
-                      value={newTranslator.username}
-                      onChange={(e) =>
-                        setNewTranslator({
-                          ...newTranslator,
-                          username: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground mb-1 block">
-                      Email
-                    </label>
-                    <Input
-                      type="email"
-                      placeholder="Enter email"
-                      value={newTranslator.email}
-                      onChange={(e) =>
-                        setNewTranslator({
-                          ...newTranslator,
-                          email: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <Button onClick={addTranslator}>Add Translator</Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setShowAddTranslator(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
+
+                {translatorPassword && (
+                  <Card className="p-4 mb-6 border-green-500/30 bg-green-500/10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle2 className="w-5 h-5 text-green-400" />
+                      <h4 className="font-semibold text-green-400">
+                        Translator Created Successfully!
+                      </h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Generated Password (share this with the translator):
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <code className="px-3 py-2 bg-background border border-border rounded text-sm font-mono">
+                        {translatorPassword}
+                      </code>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(translatorPassword);
+                        }}
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-4"
+                      onClick={() => {
+                        setTranslatorPassword(null);
+                        setShowAddTranslator(false);
+                      }}
+                    >
+                      Create Another
+                    </Button>
+                  </Card>
+                )}
+
+                {!translatorPassword && (
+                  <>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="text-sm text-muted-foreground mb-1 block">
+                          Username
+                        </label>
+                        <Input
+                          placeholder="Enter username"
+                          value={newTranslator.username}
+                          onChange={(e) =>
+                            setNewTranslator({
+                              ...newTranslator,
+                              username: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-muted-foreground mb-1 block">
+                          Email
+                        </label>
+                        <Input
+                          type="email"
+                          placeholder="Enter email"
+                          value={newTranslator.email}
+                          onChange={(e) =>
+                            setNewTranslator({
+                              ...newTranslator,
+                              email: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button onClick={addTranslator}>Add Translator</Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setTranslatorPassword(null);
+                          setShowAddTranslator(false);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                )}
               </Card>
             )}
 
@@ -492,7 +553,7 @@ export default function AdminDashboard() {
                   key={novel.id}
                   className="overflow-hidden group hover:border-primary/30 transition-colors"
                 >
-                  <div className="aspect-[3/4] relative overflow-hidden">
+                  <div className="aspect-3/4 relative overflow-hidden">
                     <img
                       src={novel.cover || "/placeholder.svg"}
                       alt={novel.title}
