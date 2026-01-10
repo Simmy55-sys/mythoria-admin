@@ -1,10 +1,5 @@
-import AdminDashboard from "@/components/pages/dashboard";
-import { ProtectedRoute } from "@/components/protected-route";
+import DashboardPage from "@/components/pages/dashboard";
 
 export default function Home() {
-  return (
-    <ProtectedRoute>
-      <AdminDashboard />
-    </ProtectedRoute>
-  );
+  return <DashboardPage />;
 }
