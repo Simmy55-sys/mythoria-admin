@@ -1,5 +1,20 @@
 import ManageTranslatorsComponent from "@/components/pages/translators/manage";
+import { Spinner } from "@/components/ui/spinner";
+import { Suspense } from "react";
 
 export default function ManageTranslatorsPage() {
-  return <ManageTranslatorsComponent />;
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center flex items-center gap-2">
+            <Spinner />
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <ManageTranslatorsComponent />
+    </Suspense>
+  );
 }
