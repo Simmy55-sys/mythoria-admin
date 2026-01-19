@@ -63,6 +63,7 @@ export default function DashboardPage() {
         setErrorPurchases(null);
         const result = await getRecentPurchasedChaptersAction(10);
         if (result.success) {
+          console.log(result.data)
           setRecentPurchases(result.data);
         } else {
           setErrorPurchases(result.error || "Failed to load recent purchases");
