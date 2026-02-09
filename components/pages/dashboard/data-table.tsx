@@ -1,4 +1,5 @@
 import type React from "react";
+import { Pagination } from "./pagination";
 
 interface Column<T> {
   key: keyof T;
@@ -10,13 +11,31 @@ interface DataTableProps<T> {
   title: string;
   columns: Column<T>[];
   data: T[];
+  pagination?: {
+    currentPage: number;
+    itemsPerPage: number;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export function DataTable<T extends Record<string, any>>({
   title,
   columns,
   data,
+  pagination,
 }: DataTableProps<T>) {
+  // Calculate paginated data if pagination is enabled
+  const displayData = pagination
+    ? data.slice(
+        (pagination.currentPage - 1) * pagination.itemsPerPage,
+        pagination.currentPage * pagination.itemsPerPage
+      )
+    : data;
+
+  const totalPages = pagination
+    ? Math.ceil(data.length / pagination.itemsPerPage)
+    : 1;
+
   return (
     <div className="bg-card border border-[#27272A] rounded-lg overflow-hidden">
       <div className="px-6 py-4 border-b border-[#27272A] bg-muted/30">
@@ -37,7 +56,7 @@ export function DataTable<T extends Record<string, any>>({
             </tr>
           </thead>
           <tbody>
-            {data.length === 0 ? (
+            {displayData.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
@@ -47,7 +66,7 @@ export function DataTable<T extends Record<string, any>>({
                 </td>
               </tr>
             ) : (
-              data.map((row, idx) => (
+              displayData.map((row, idx) => (
                 <tr
                   key={idx}
                   className="border-b border-[#27272A] hover:bg-muted/50 transition-colors"
@@ -68,6 +87,15 @@ export function DataTable<T extends Record<string, any>>({
           </tbody>
         </table>
       </div>
+      {pagination && (
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={totalPages}
+          onPageChange={pagination.onPageChange}
+          itemsPerPage={pagination.itemsPerPage}
+          totalItems={data.length}
+        />
+      )}
     </div>
   );
 }

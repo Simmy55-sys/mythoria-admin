@@ -33,6 +33,14 @@ export default function DashboardPage() {
     null
   );
 
+  // Pagination state for Purchased Chapters
+  const [purchasesPage, setPurchasesPage] = useState(1);
+  const purchasesPerPage = 10;
+
+  // Pagination state for Coin Purchases
+  const [coinPurchasesPage, setCoinPurchasesPage] = useState(1);
+  const coinPurchasesPerPage = 10;
+
   useEffect(() => {
     const loadStatistics = async () => {
       try {
@@ -61,9 +69,9 @@ export default function DashboardPage() {
       try {
         setLoadingPurchases(true);
         setErrorPurchases(null);
-        const result = await getRecentPurchasedChaptersAction(10);
+        // Load more data to support pagination (100 items should be enough)
+        const result = await getRecentPurchasedChaptersAction(100);
         if (result.success) {
-          console.log(result.data)
           setRecentPurchases(result.data);
         } else {
           setErrorPurchases(result.error || "Failed to load recent purchases");
@@ -85,7 +93,8 @@ export default function DashboardPage() {
       try {
         setLoadingCoinPurchases(true);
         setErrorCoinPurchases(null);
-        const result = await getRecentCoinPurchasesAction(10);
+        // Load more data to support pagination (100 items should be enough)
+        const result = await getRecentCoinPurchasesAction(100);
         if (result.success) {
           setRecentCoinPurchases(result.data);
         } else {
@@ -206,6 +215,11 @@ export default function DashboardPage() {
                 { key: "date", label: "Date" },
               ]}
               data={recentPurchases}
+              pagination={{
+                currentPage: purchasesPage,
+                itemsPerPage: purchasesPerPage,
+                onPageChange: setPurchasesPage,
+              }}
             />
           )}
 
@@ -272,6 +286,11 @@ export default function DashboardPage() {
                 },
               ]}
               data={recentCoinPurchases}
+              pagination={{
+                currentPage: coinPurchasesPage,
+                itemsPerPage: coinPurchasesPerPage,
+                onPageChange: setCoinPurchasesPage,
+              }}
             />
           )}
         </div>

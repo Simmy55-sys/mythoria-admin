@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { FieldLabel } from "@/components/ui/field";
 import { AssignSeriesForm } from "./assign-series-form";
+import { Pagination } from "../dashboard/pagination";
 import type { NovelSeries } from "@/lib/api";
 
 interface NovelListProps {
@@ -31,10 +32,25 @@ export function NovelList({ onSelectNovel }: NovelListProps) {
     seriesName: string;
     assignmentId: string;
   } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<{
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  } | null>(null);
+  const itemsPerPage = 10;
 
+  // Reset to page 1 when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // Load novels when page or search changes
   useEffect(() => {
     loadNovels();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchQuery]);
 
   const loadNovels = async () => {
     try {
@@ -42,10 +58,17 @@ export function NovelList({ onSelectNovel }: NovelListProps) {
       setError(null);
 
       const { getAllNovelsAction } = await import("@/server-actions/novel");
-      const result = await getAllNovelsAction();
+      const result = await getAllNovelsAction({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchQuery || undefined,
+      });
 
       if (result.success) {
         setNovels(result.data);
+        if (result.pagination) {
+          setPagination(result.pagination);
+        }
       } else {
         setError(result.error || "Failed to load novels");
       }
@@ -57,10 +80,6 @@ export function NovelList({ onSelectNovel }: NovelListProps) {
       setLoading(false);
     }
   };
-
-  const filteredNovels = novels.filter((novel) =>
-    novel.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   const handleAssignSuccess = (assignmentId: string, seriesTitle: string) => {
     setAssignmentResult({
@@ -200,9 +219,15 @@ export function NovelList({ onSelectNovel }: NovelListProps) {
             <CardDescription>
               {loading
                 ? "Loading..."
-                : `${filteredNovels.length} novel${
-                    filteredNovels.length !== 1 ? "s" : ""
-                  } found`}
+                : pagination
+                ? `${pagination.total} novel${
+                    pagination.total !== 1 ? "s" : ""
+                  } found${
+                    pagination.totalPages > 1
+                      ? ` (page ${pagination.page} of ${pagination.totalPages})`
+                      : ""
+                  }`
+                : "No novels found"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -210,7 +235,7 @@ export function NovelList({ onSelectNovel }: NovelListProps) {
               <div className="text-center py-12 text-muted-foreground">
                 <p>Loading novels...</p>
               </div>
-            ) : filteredNovels.length === 0 ? (
+            ) : novels.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <p>No novels found.</p>
                 {searchQuery && (
@@ -247,7 +272,7 @@ export function NovelList({ onSelectNovel }: NovelListProps) {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredNovels.map((novel) => (
+                      {novels.map((novel) => (
                         <tr
                           key={novel.id}
                           className="border-b last:border-b-0 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -317,7 +342,7 @@ export function NovelList({ onSelectNovel }: NovelListProps) {
 
                 {/* Mobile Card View */}
                 <div className="md:hidden space-y-4">
-                  {filteredNovels.map((novel) => (
+                  {novels.map((novel) => (
                     <Card
                       key={novel.id}
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -392,6 +417,19 @@ export function NovelList({ onSelectNovel }: NovelListProps) {
                     </Card>
                   ))}
                 </div>
+
+                {/* Pagination */}
+                {pagination && pagination.totalPages > 1 && (
+                  <div className="mt-6 border-t border-[#27272A] pt-4">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={pagination.totalPages}
+                      onPageChange={setCurrentPage}
+                      itemsPerPage={itemsPerPage}
+                      totalItems={pagination.total}
+                    />
+                  </div>
+                )}
               </>
             )}
           </CardContent>

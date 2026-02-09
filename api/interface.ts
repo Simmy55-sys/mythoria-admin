@@ -311,12 +311,48 @@ class ApiClient {
   }
 
   /**
-   * Get all series/novels
+   * Get all series/novels with pagination and filters
    */
-  async getSeries(cookieHeader?: string) {
-    return this.execute<any[]>({
+  async getSeries(
+    options?: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      status?: string[];
+      translator?: string;
+    },
+    cookieHeader?: string
+  ) {
+    const params: Record<string, string> = {};
+    
+    if (options?.page) {
+      params.page = options.page.toString();
+    }
+    if (options?.limit) {
+      params.limit = options.limit.toString();
+    }
+    if (options?.search) {
+      params.search = options.search;
+    }
+    if (options?.status && options.status.length > 0) {
+      params.status = options.status.join(",");
+    }
+    if (options?.translator) {
+      params.translator = options.translator;
+    }
+
+    return this.execute<{
+      data: any[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+    }>({
       method: "GET",
       endpoint: "/admin/series",
+      params,
       headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
     });
   }
